@@ -1,11 +1,11 @@
 import type { IconMap, SocialLink, Site } from '@/types'
 
 export const SITE: Site = {
-  title: 'Your Blog Name',
+  title: 'SSBOrbit',
   description:
-    'A brief description of your blog. This will be used in meta tags and social sharing.',
-  href: 'https://yourdomain.com',
-  author: 'your-author-id',
+    'Platform for future Armed forces Officers',
+  href: 'https://ssborbit.com',
+  author: 'vishal',
   locale: 'en-US',
   featuredPostCount: 2,
   postsPerPage: 6,
