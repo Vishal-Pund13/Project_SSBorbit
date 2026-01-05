@@ -1,0 +1,169 @@
+---
+import Breadcrumbs from '@/components/Breadcrumbs.astro'
+import PageHead from '@/components/PageHead.astro'
+import Layout from '@/layouts/Layout.astro'
+import { Icon } from 'astro-icon/components'
+import { SITE } from '@/consts'
+
+// Defence exam notifications data
+const notifications = [
+  {
+    title: 'NDA (I) 2026 exam on 21 April 2026 – Apply now',
+    date: '2025-12-15',
+    exam: 'NDA',
+    status: 'active',
+    link: 'https://upsc.gov.in',
+    description: 'National Defence Academy (I) 2026 examination scheduled for 21 April 2026. Last date to apply: 9 January 2026.'
+  },
+  {
+    title: 'CDS (I) 2026 notification released – Last date 9 Jan 2026',
+    date: '2025-12-10',
+    exam: 'CDS',
+    status: 'active',
+    link: 'https://upsc.gov.in',
+    description: 'Combined Defence Services (I) 2026 notification has been released. Application deadline: 9 January 2026.'
+  },
+  {
+    title: 'AFCAT 01/2026 result declared – Check merit list',
+    date: '2025-12-05',
+    exam: 'AFCAT',
+    status: 'result',
+    link: 'https://afcat.cdac.in',
+    description: 'Air Force Common Admission Test (AFCAT) 01/2026 results have been declared. Check the official website for merit list.'
+  },
+  {
+    title: 'IMA / OTA SSB dates announced for CDS (II) 2025',
+    date: '2025-11-28',
+    exam: 'SSB',
+    status: 'announced',
+    link: 'https://joinindianarmy.nic.in',
+    description: 'Service Selection Board (SSB) dates for Indian Military Academy (IMA) and Officers Training Academy (OTA) have been announced for CDS (II) 2025 candidates.'
+  },
+  {
+    title: 'NCC Special Entry Scheme 2026 notification',
+    date: '2025-11-20',
+    exam: 'NCC',
+    status: 'active',
+    link: 'https://joinindianarmy.nic.in',
+    description: 'NCC Special Entry Scheme 2026 notification released. Applications open for eligible NCC cadets.'
+  },
+  {
+    title: 'Indian Navy B.Tech Entry 2026 – Apply online',
+    date: '2025-11-15',
+    exam: 'Navy',
+    status: 'active',
+    link: 'https://joinindiannavy.gov.in',
+    description: 'Indian Navy B.Tech Entry 2026 applications are now open. Last date to apply: 30 December 2025.'
+  }
+]
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'active':
+      return 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20'
+    case 'result':
+      return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+    case 'announced':
+      return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
+    default:
+      return 'bg-muted text-muted-foreground border-border'
+  }
+}
+
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case 'active':
+      return 'Active'
+    case 'result':
+      return 'Result Out'
+    case 'announced':
+      return 'Announced'
+    default:
+      return status
+  }
+}
+---
+
+<Layout class="max-w-3xl">
+  <PageHead slot="head" title="Defence Exam Notifications" />
+  <Breadcrumbs
+    items={[
+      { label: 'Notifications', icon: 'lucide:bell' },
+    ]}
+  />
+
+  <div class="flex min-h-[calc(100vh-18rem)] flex-col">
+    <!-- Header -->
+    <div class="flex flex-col gap-4 mb-8">
+      <div>
+        <h1 class="text-3xl md:text-4xl font-bold">Defence Exam Notifications</h1>
+        <p class="text-sm text-muted-foreground font-mono mt-1">
+          Stay updated with the latest defence exam notifications
+        </p>
+      </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="space-y-4">
+      {notifications.map((notification) => (
+        <div class="group rounded-lg border bg-card p-5 hover:bg-muted/30 transition-colors">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 space-y-2">
+              <div class="flex items-center gap-3 flex-wrap">
+                <h3 class="text-lg font-semibold group-hover:text-primary transition-colors">
+                  {notification.title}
+                </h3>
+                <span class={`text-xs px-2 py-1 rounded-md border font-medium ${getStatusColor(notification.status)}`}>
+                  {getStatusLabel(notification.status)}
+                </span>
+              </div>
+              
+              <p class="text-sm text-muted-foreground leading-relaxed">
+                {notification.description}
+              </p>
+              
+              <div class="flex items-center gap-4 text-xs text-muted-foreground">
+                <span class="flex items-center gap-1.5">
+                  <Icon name="lucide:calendar" class="size-3.5" />
+                  {new Date(notification.date).toLocaleDateString('en-IN', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <Icon name="lucide:book-open" class="size-3.5" />
+                  {notification.exam}
+                </span>
+              </div>
+            </div>
+            
+            <a
+              href={notification.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="shrink-0 p-2 rounded-md border hover:bg-primary hover:text-primary-foreground transition-colors"
+              title="View official notification"
+            >
+              <Icon name="lucide:external-link" class="size-4" />
+            </a>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Info Box -->
+    <div class="mt-8 p-4 rounded-lg border bg-muted/30">
+      <div class="flex items-start gap-3">
+        <Icon name="lucide:info" class="size-5 text-primary shrink-0 mt-0.5" />
+        <div class="space-y-1 text-sm">
+          <p class="font-medium">Important Note</p>
+          <p class="text-muted-foreground">
+            Always verify information from official sources. Links provided are for reference only. 
+            Please check the official websites (UPSC, Indian Army, Indian Navy, Indian Air Force) for the most current and accurate information.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
