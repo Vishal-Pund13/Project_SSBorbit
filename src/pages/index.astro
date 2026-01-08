@@ -9,16 +9,16 @@ import { getRecentPosts } from '@/lib/data-utils'
 import { buttonVariants } from '@/components/ui/button'
 import { SOCIAL_LINKS, ICON_MAP, SITE } from '@/consts'
 import type { SocialLink } from '@/types'
-import { getCollection } from 'astro:content'
+import { getCollection, type CollectionEntry } from 'astro:content'
 
-let latestPosts = []
+let latestPosts: CollectionEntry<'blog'>[] = []
 try {
   latestPosts = await getRecentPosts(4)
 } catch (e) {
   console.error(e)
 }
 
-let recentCompilations = []
+let recentCompilations: CollectionEntry<'compilations'>[] = []
 try {
   const allCompilations = await getCollection('compilations', ({ data }) => {
     return !data.draft
@@ -63,7 +63,7 @@ const notifications = [
 
   <!-- 2. NOTIFICATIONS (MOVING CAROUSEL) -->
   <section class="mt-10">
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
         <Icon name="lucide:bell" class="size-5 text-primary" />
         <h2 class="text-2xl font-semibold">Defence Exam Notifications</h2>
@@ -344,7 +344,7 @@ const notifications = [
 
   <!-- 5. CTA SECTION -->
   <section class="mt-16 text-center">
-    <h2 class="text-4xl font-semibold">Let’s connect</h2>
+    <h2 class="text-4xl font-semibold">Let's connect</h2>
     <p class="mt-3 text-muted-foreground">
       Defence aspirants, builders, and learners — feel free to reach out.
     </p>
