@@ -1,0 +1,213 @@
+---
+import Breadcrumbs from '@/components/Breadcrumbs.astro'
+import Disqus from '@/components/Disqus.astro'
+import Link from '@/components/Link.astro'
+import PostHead from '@/components/PostHead.astro'
+import PostNavigation from '@/components/PostNavigation.astro'
+import { badgeVariants } from '@/components/ui/badge'
+import Layout from '@/layouts/Layout.astro'
+import { SITE } from '@/consts'
+import { parseAuthors } from '@/lib/data-utils'
+import { formatDate, getTagVariant, readingTime } from '@/lib/utils'
+import { Icon } from 'astro-icon/components'
+import { Image } from 'astro:assets'
+import { getCollection, render } from 'astro:content'
+
+export async function getStaticPaths() {
+  const compilations = await getCollection('compilations', ({ data }) => {
+    return !data.draft
+  })
+  
+  return compilations.map((compilation) => ({
+    params: { id: compilation.id },
+    props: compilation,
+  }))
+}
+
+const compilation = Astro.props
+const currentCompilationId = Astro.params.id
+
+// Error handling for content rendering
+let Content: Awaited<ReturnType<typeof render>>['Content']
+let headings: Awaited<ReturnType<typeof render>>['headings'] = []
+try {
+  const rendered = await render(compilation)
+  Content = rendered.Content
+  headings = rendered.headings ?? []
+} catch (error) {
+  console.error('Error rendering compilation content:', error)
+  return Astro.redirect('/404')
+}
+
+// Error handling for authors parsing
+let authors: Awaited<ReturnType<typeof parseAuthors>> = []
+try {
+  authors = await parseAuthors(compilation.data.authors ?? [])
+} catch (error) {
+  console.error('Error parsing authors:', error)
+}
+
+// Get adjacent compilations for navigation
+let adjacentCompilations: {
+  newer: typeof compilation | null
+  older: typeof compilation | null
+} = { newer: null, older: null }
+
+try {
+  const allCompilations = await getCollection('compilations', ({ data }) => {
+    return !data.draft
+  })
+  
+  const sortedCompilations = allCompilations.sort(
+    (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+  )
+  
+  const currentIndex = sortedCompilations.findIndex(
+    (c) => c.id === currentCompilationId
+  )
+  
+  if (currentIndex !== -1) {
+    adjacentCompilations = {
+      newer: currentIndex > 0 ? sortedCompilations[currentIndex - 1] : null,
+      older:
+        currentIndex < sortedCompilations.length - 1
+          ? sortedCompilations[currentIndex + 1]
+          : null,
+    }
+  }
+} catch (error) {
+  console.error('Error fetching adjacent compilations:', error)
+}
+
+const compilationReadingTime = readingTime(
+  compilation.body.split(/\s+/).length
+)
+---
+
+<Layout class="max-w-3xl">
+  <PostHead slot="head" post={compilation} />
+
+  <section class="flex flex-col gap-y-6">
+    <Breadcrumbs
+      items={[
+        { href: '/compilations', label: 'Compilations', icon: 'lucide:book-open' },
+        {
+          href: `/compilations/${currentCompilationId}`,
+          label: compilation.data.title,
+          icon: 'lucide:file-text',
+        },
+      ]}
+    />
+
+    {
+      compilation.data.image && (
+        <Image
+          src={compilation.data.image}
+          alt={compilation.data.title}
+          width={1200}
+          height={630}
+          class="w-full rounded-lg object-cover"
+        />
+      )
+    }
+
+    <div class="flex flex-col gap-y-6">
+      <div class="flex flex-col">
+        <h1 class="mb-2 scroll-mt-31 text-3xl leading-tight font-medium sm:text-4xl">
+          {compilation.data.title}
+        </h1>
+
+        <div class="text-muted-foreground divide-border mb-4 flex flex-col items-start justify-start divide-y text-xs sm:flex-row sm:flex-wrap sm:divide-x sm:divide-y-0 sm:text-sm">
+          {
+            authors.length > 0 && (
+              <div class="flex w-full items-center gap-x-2 py-2 sm:w-fit sm:px-2 sm:py-0 first:sm:pl-0 last:sm:pr-0">
+                {authors.map((author) => (
+                  <div class="flex items-center gap-x-1.5">
+                    <Image
+                      src={author.avatar}
+                      alt={author.name}
+                      width={20}
+                      height={20}
+                      class="rounded-full"
+                    />
+                    {author.isRegistered ? (
+                      <Link
+                        href={`/authors/${author.id}`}
+                        underline
+                        class="text-foreground"
+                      >
+                        <span>{author.name}</span>
+                      </Link>
+                    ) : (
+                      <span>{author.name}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )
+          }
+
+          <div class="flex w-full items-center gap-2 py-2 sm:w-fit sm:px-2 sm:py-0 first:sm:pl-0 last:sm:pr-0">
+            <span>{formatDate(compilation.data.date)}</span>
+          </div>
+
+          <div class="flex w-full items-center gap-2 py-2 sm:w-fit sm:px-2 sm:py-0 first:sm:pl-0 last:sm:pr-0">
+            <span>{compilationReadingTime}</span>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          {
+            compilation.data.tags &&
+              compilation.data.tags.length > 0 &&
+              compilation.data.tags.map((tag) => {
+                const { variant, className, tooltip } = getTagVariant(tag)
+                return (
+                  <div class="group relative">
+                    <a
+                      href={`/tags/${tag}`}
+                      class={`${badgeVariants({ variant })} ${className || ''}`}
+                    >
+                      <Icon name="lucide:hash" class="size-3" />
+                      {tag}
+                    </a>
+                    {tooltip && (
+                      <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-3 w-max max-w-xs rounded-md bg-gray-900 dark:bg-gray-50 px-3 py-2 text-xs text-white dark:text-gray-900 shadow-xl border border-gray-700 dark:border-gray-200 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200 z-[100]">
+                        {tooltip}
+                        <span class="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-gray-900 dark:border-t-gray-50"></span>
+                      </span>
+                    )}
+                  </div>
+                )
+              })
+          }
+        </div>
+      </div>
+
+      <div class="prose prose-sm dark:prose-invert max-w-none">
+        <Content />
+      </div>
+
+      <PostNavigation
+        newer={
+          adjacentCompilations.newer
+            ? {
+                title: adjacentCompilations.newer.data.title,
+                href: `/compilations/${adjacentCompilations.newer.id}`,
+              }
+            : null
+        }
+        older={
+          adjacentCompilations.older
+            ? {
+                title: adjacentCompilations.older.data.title,
+                href: `/compilations/${adjacentCompilations.older.id}`,
+              }
+            : null
+        }
+      />
+
+      {SITE.disqus && <Disqus identifier={`compilations-${currentCompilationId}`} />}
+    </div>
+  </section>
+</Layout>

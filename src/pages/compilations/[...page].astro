@@ -1,0 +1,77 @@
+---
+import CompilationCard from '@/components/CompilationCard.astro'
+import Breadcrumbs from '@/components/Breadcrumbs.astro'
+import PageHead from '@/components/PageHead.astro'
+import PaginationComponent from '@/components/ui/pagination'
+import { SITE } from '@/consts'
+import Layout from '@/layouts/Layout.astro'
+import { getCollection } from 'astro:content'
+import type { PaginateFunction } from 'astro'
+
+export async function getStaticPaths({
+  paginate,
+}: {
+  paginate: PaginateFunction
+}) {
+  const allCompilations = await getCollection('compilations', ({ data }) => {
+    return !data.draft
+  })
+  
+  const sortedCompilations = allCompilations.sort(
+    (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+  )
+  
+  return paginate(sortedCompilations, { pageSize: SITE.postsPerPage })
+}
+
+const { page } = Astro.props
+
+const compilationsByYear = page.data.reduce(
+  (acc: Record<string, typeof page.data>, compilation) => {
+    const year = compilation.data.date.getFullYear().toString()
+    ;(acc[year] ??= []).push(compilation)
+    return acc
+  },
+  {},
+)
+
+const years = Object.keys(compilationsByYear).sort((a, b) => parseInt(b) - parseInt(a))
+---
+
+<Layout class="max-w-3xl">
+  <PageHead slot="head" title="Compilations" />
+  <Breadcrumbs
+    items={[
+      { label: 'Compilations', href: '/compilations', icon: 'lucide:book-open' },
+      { label: `Page ${page.currentPage}`, icon: 'lucide:book-copy' },
+    ]}
+  />
+
+  <div class="flex min-h-[calc(100vh-18rem)] flex-col">
+    {
+      years.map((year) => (
+        <section class="flex flex-col">
+          <div class="text-muted-foreground/60 text-xs font-medium uppercase tracking-wider mb-2.5 mt-6 first:mt-0">
+            {year}
+          </div>
+          <ul class="flex flex-col gap-2">
+            {compilationsByYear[year].map((compilation) => (
+              <li>
+                <CompilationCard entry={compilation} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+
+  <div class="mt-6">
+    <PaginationComponent
+      currentPage={page.currentPage}
+      totalPages={page.lastPage}
+      baseUrl="/compilations/"
+      client:idle
+    />
+  </div>
+</Layout>

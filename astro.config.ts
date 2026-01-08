@@ -76,7 +76,10 @@ export default defineConfig({
     plugins: [tailwindcss() as any],
   },
   server: {
-    allowedHosts: ['16d601078601.ngrok-free.app'],
+    allowedHosts: [
+      '16d601078601.ngrok-free.app',
+      '383e478a54cf.ngrok-free.app',
+    ],
     port: 1234,
     host: true,
   },

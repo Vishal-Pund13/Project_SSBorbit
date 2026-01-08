@@ -4,7 +4,7 @@ import { isSubpost } from '@/lib/data-utils'
 import type { CollectionEntry } from 'astro:content'
 
 interface Props {
-  post: CollectionEntry<'blog'>
+  post: CollectionEntry<'blog'> | CollectionEntry<'compilations'>
 }
 
 const { post } = Astro.props
@@ -64,7 +64,7 @@ const articleSchema = {
 <meta name="description" content={description} />
 <link rel="canonical" href={postUrl} />
 
-{isSubpost(post.id) && <meta name="robots" content="noindex" />}
+{post.collection === 'blog' && isSubpost(post.id) && <meta name="robots" content="noindex" />}
 
 <!-- Enhanced Open Graph tags for AI/GEO optimization -->
 <meta property="og:title" content={title} />

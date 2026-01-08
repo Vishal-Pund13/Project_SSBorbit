@@ -1,5 +1,6 @@
 ---
 import BlogCard from '@/components/BlogCard.astro'
+import CompilationCard from '@/components/CompilationCard.astro'
 import Link from '@/components/Link.astro'
 import PageHead from '@/components/PageHead.astro'
 import Layout from '@/layouts/Layout.astro'
@@ -8,10 +9,23 @@ import { getRecentPosts } from '@/lib/data-utils'
 import { buttonVariants } from '@/components/ui/button'
 import { SOCIAL_LINKS, ICON_MAP, SITE } from '@/consts'
 import type { SocialLink } from '@/types'
+import { getCollection } from 'astro:content'
 
 let latestPosts = []
 try {
   latestPosts = await getRecentPosts(4)
+} catch (e) {
+  console.error(e)
+}
+
+let recentCompilations = []
+try {
+  const allCompilations = await getCollection('compilations', ({ data }) => {
+    return !data.draft
+  })
+  recentCompilations = allCompilations
+    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+    .slice(0, 3)
 } catch (e) {
   console.error(e)
 }
@@ -21,12 +35,6 @@ const notifications = [
   'CDS (I) 2026 notification released – Last date 9 Jan 2026',
   'AFCAT 01/2026 result declared – Check merit list',
   'IMA / OTA SSB dates announced for CDS (II) 2025',
-]
-
-const compilations = [
-  { title: 'Monthly Defence News – Dec 2025', href: '/compilations/dec-2025' },
-  { title: 'SSB Interview Psychology Notes', href: '/compilations/ssb-psych' },
-  { title: 'NDA Maths Formula Sheet', href: '/compilations/nda-maths' }
 ]
 ---
 
@@ -53,57 +61,288 @@ const compilations = [
     </div>
   </section>
 
-  <!-- 2. NOTIFICATIONS (CAROUSEL STYLE) -->
+  <!-- 2. NOTIFICATIONS (MOVING CAROUSEL) -->
   <section class="mt-10">
-    <h2 class="text-2xl font-semibold mb-3">Defence Exam Notifications</h2>
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <Icon name="lucide:bell" class="size-5 text-primary" />
+        <h2 class="text-2xl font-semibold">Defence Exam Notifications</h2>
+      </div>
+      <Link href="/notifications" class={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+        View all <Icon name="lucide:arrow-right" class="size-4" />
+      </Link>
+    </div>
 
-    <div class="overflow-hidden relative">
-      <div class="flex gap-4 animate-marquee">
-        {notifications.concat(notifications).map(note => (
-          <div class="min-w-[260px] shrink-0 flex items-center gap-2 text-sm text-muted-foreground border rounded-md px-3 py-2 bg-muted/30">
-            <Icon name="lucide:bell" class="size-4 text-primary" />
-            <span>{note}</span>
+    <div class="relative overflow-hidden rounded-lg border bg-muted/20 p-4">
+      <div class="flex gap-4 animate-marquee hover:[animation-play-state:paused]">
+        {notifications.concat(notifications).map((note, index) => (
+          <div 
+            key={`${note}-${index}`}
+            class="min-w-[280px] shrink-0 flex items-center gap-3 text-sm border rounded-lg px-4 py-3 bg-background hover:bg-muted/50 transition-colors shadow-sm"
+          >
+            <div class="shrink-0">
+              <Icon name="lucide:bell" class="size-4 text-primary" />
+            </div>
+            <span class="text-foreground/80 font-medium">{note}</span>
           </div>
         ))}
       </div>
     </div>
   </section>
 
-  <!-- 3. COMPILATIONS -->
+  <!-- 3. SSB 5-DAY PROCESS TIMELINE -->
   <section class="mt-12">
-    <h2 class="text-2xl font-semibold mb-4">Compilations</h2>
-    <div class="grid gap-3 sm:grid-cols-2">
-      {compilations.map(item => (
-        <Link
-          href={item.href}
-          class="group flex items-center justify-between rounded-lg border px-4 py-3 bg-muted/20 hover:bg-muted/40 transition"
-        >
-          <span class="font-medium group-hover:text-primary">{item.title}</span>
-          <Icon name="lucide:arrow-right" class="size-4 text-muted-foreground group-hover:text-primary" />
-        </Link>
-      ))}
+    <div class="flex items-center gap-2 mb-6">
+      <Icon name="lucide:calendar-days" class="size-6 text-primary" />
+      <h2 class="text-2xl font-semibold">SSB 5-Day Selection Process</h2>
+    </div>
+
+    <div class="relative rounded-xl border bg-gradient-to-br from-primary/5 via-background to-background p-6 md:p-8">
+      <!-- Timeline line (vertical) -->
+      <div class="absolute left-8 top-12 bottom-12 w-0.5 bg-primary/20 hidden md:block"></div>
+
+      <div class="space-y-8 relative">
+        <!-- Day 1 -->
+        <div class="relative flex gap-6 items-start">
+          <div class="relative z-10 shrink-0">
+            <div class="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center">
+              <Icon name="lucide:clipboard-check" class="size-8 text-primary" />
+            </div>
+            <div class="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+              1
+            </div>
+          </div>
+          <div class="flex-1 pt-2">
+            <div class="flex items-center gap-2 mb-2">
+              <h3 class="text-xl font-semibold">Day 1: Screening</h3>
+              <span class="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">Screening</span>
+            </div>
+            <p class="text-muted-foreground mb-3">
+              The first day determines if you proceed to the next 4 days. Only about 50% of candidates clear this stage.
+            </p>
+            <div class="grid gap-2 sm:grid-cols-3">
+              <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+                <Icon name="lucide:file-text" class="size-4 text-primary" />
+                <span class="font-medium">OIR Test</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+                <Icon name="lucide:image" class="size-4 text-primary" />
+                <span class="font-medium">PPDT</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+                <Icon name="lucide:message-square" class="size-4 text-primary" />
+                <span class="font-medium">Interview</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Day 2 -->
+        <div class="relative flex gap-6 items-start">
+          <div class="relative z-10 shrink-0">
+            <div class="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center">
+              <Icon name="lucide:brain" class="size-8 text-primary" />
+            </div>
+            <div class="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+              2
+            </div>
+          </div>
+          <div class="flex-1 pt-2">
+            <div class="flex items-center gap-2 mb-2">
+              <h3 class="text-xl font-semibold">Day 2: Psychology Tests</h3>
+              <span class="text-xs px-2 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 font-medium">Psychology</span>
+            </div>
+            <p class="text-muted-foreground mb-3">
+              Four written tests to assess your personality, thought process, and decision-making abilities.
+            </p>
+            <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+                <Icon name="lucide:book-open" class="size-4 text-primary" />
+                <span class="font-medium">TAT</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+                <Icon name="lucide:zap" class="size-4 text-primary" />
+                <span class="font-medium">WAT</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+                <Icon name="lucide:lightbulb" class="size-4 text-primary" />
+                <span class="font-medium">SRT</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+                <Icon name="lucide:user" class="size-4 text-primary" />
+                <span class="font-medium">SDT</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Day 3 -->
+        <div class="relative flex gap-6 items-start">
+          <div class="relative z-10 shrink-0">
+            <div class="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center">
+              <Icon name="lucide:users" class="size-8 text-primary" />
+            </div>
+            <div class="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+              3
+            </div>
+          </div>
+          <div class="flex-1 pt-2">
+            <div class="flex items-center gap-2 mb-2">
+              <h3 class="text-xl font-semibold">Day 3: GTO Tasks (Part 1)</h3>
+              <span class="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 font-medium">Group Tasks</span>
+            </div>
+            <p class="text-muted-foreground mb-3">
+              Group Testing Officer tasks focus on leadership, teamwork, and problem-solving in group settings.
+            </p>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+                <Icon name="lucide:message-circle" class="size-4 text-primary" />
+                <span class="font-medium">Group Discussion</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+                <Icon name="lucide:map" class="size-4 text-primary" />
+                <span class="font-medium">Group Planning Exercise</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Day 4 -->
+        <div class="relative flex gap-6 items-start">
+          <div class="relative z-10 shrink-0">
+            <div class="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center">
+              <Icon name="lucide:activity" class="size-8 text-primary" />
+            </div>
+            <div class="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+              4
+            </div>
+          </div>
+          <div class="flex-1 pt-2">
+            <div class="flex items-center gap-2 mb-2">
+              <h3 class="text-xl font-semibold">Day 4: GTO Tasks (Part 2)</h3>
+              <span class="text-xs px-2 py-1 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 font-medium">Physical Tasks</span>
+            </div>
+            <p class="text-muted-foreground mb-3">
+              More challenging group tasks and individual tasks to assess your physical and mental capabilities.
+            </p>
+            <div class="grid gap-2 sm:grid-cols-3">
+              <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+                <Icon name="lucide:trending-up" class="size-4 text-primary" />
+                <span class="font-medium">Progressive Group Task</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+                <Icon name="lucide:users-2" class="size-4 text-primary" />
+                <span class="font-medium">Half Group Task</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+                <Icon name="lucide:target" class="size-4 text-primary" />
+                <span class="font-medium">Individual Obstacles</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Day 5 -->
+        <div class="relative flex gap-6 items-start">
+          <div class="relative z-10 shrink-0">
+            <div class="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center">
+              <Icon name="lucide:trophy" class="size-8 text-primary" />
+            </div>
+            <div class="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+              5
+            </div>
+          </div>
+          <div class="flex-1 pt-2">
+            <div class="flex items-center gap-2 mb-2">
+              <h3 class="text-xl font-semibold">Day 5: Conference & Results</h3>
+              <span class="text-xs px-2 py-1 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 font-medium">Final Day</span>
+            </div>
+            <p class="text-muted-foreground mb-3">
+              The board members discuss your performance, and results are announced. Only the best candidates are recommended.
+            </p>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+                <Icon name="lucide:briefcase" class="size-4 text-primary" />
+                <span class="font-medium">Board Conference</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+                <Icon name="lucide:check-circle-2" class="size-4 text-primary" />
+                <span class="font-medium">Result Declaration</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Decorative elements -->
+      <div class="absolute top-4 right-4 opacity-10">
+        <Icon name="lucide:sparkles" class="size-12 text-primary" />
+      </div>
+      <div class="absolute bottom-4 left-4 opacity-10">
+        <Icon name="lucide:star" class="size-10 text-primary" />
+      </div>
+    </div>
+
+    <div class="mt-6 p-4 rounded-lg border bg-muted/20">
+      <div class="flex items-start gap-3">
+        <Icon name="lucide:info" class="size-5 text-primary shrink-0 mt-0.5" />
+        <div class="text-sm">
+          <p class="font-medium mb-1">Success Rate</p>
+          <p class="text-muted-foreground">
+            On average, only <strong>10-15%</strong> of candidates who appear for SSB get recommended. 
+            Preparation, confidence, and demonstrating Officer Like Qualities (OLQs) are key to success.
+          </p>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- 4. LATEST BLOGS -->
-  {latestPosts.length > 0 && (
-    <section class="mt-12">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-2xl font-semibold">Latest from the blog</h2>
-        <Link href="/blog" class={buttonVariants({ variant: 'ghost' })}>
-          View all <Icon name="lucide:arrow-right" class="size-4" />
-        </Link>
-      </div>
+  <!-- 4. BLOGS AND COMPILATIONS GRID -->
+  <section class="mt-12">
+    <div class="grid gap-8 lg:grid-cols-2">
+      <!-- LATEST BLOGS -->
+      {latestPosts.length > 0 && (
+        <div class="flex flex-col">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <Icon name="lucide:library-big" class="size-5 text-primary" />
+              <h2 class="text-2xl font-semibold">Latest from the blog</h2>
+            </div>
+            <Link href="/blog" class={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+              View all <Icon name="lucide:arrow-right" class="size-4" />
+            </Link>
+          </div>
+          <div class="space-y-2">
+            {latestPosts.map(post => (
+              <BlogCard entry={post} />
+            ))}
+          </div>
+        </div>
+      )}
 
-      <div class="space-y-2">
-        {latestPosts.map(post => (
-          <BlogCard entry={post} />
-        ))}
-      </div>
-    </section>
-  )}
+      <!-- COMPILATIONS -->
+      {recentCompilations.length > 0 && (
+        <div class="flex flex-col">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <Icon name="lucide:book-open" class="size-5 text-primary" />
+              <h2 class="text-2xl font-semibold">Compilations</h2>
+            </div>
+            <Link href="/compilations" class={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+              View all <Icon name="lucide:arrow-right" class="size-4" />
+            </Link>
+          </div>
+          <div class="space-y-2">
+            {recentCompilations.map(compilation => (
+              <CompilationCard entry={compilation} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  </section>
 
-  <!-- 4. CTA SECTION -->
+  <!-- 5. CTA SECTION -->
   <section class="mt-16 text-center">
     <h2 class="text-4xl font-semibold">Let’s connect</h2>
     <p class="mt-3 text-muted-foreground">
